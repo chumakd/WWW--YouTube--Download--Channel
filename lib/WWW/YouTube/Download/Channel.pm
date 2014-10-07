@@ -161,6 +161,15 @@ sub newer_than {
     $self->date_filter_newer( DateTime->new($date) );
 }
 
+sub _filename_normalize {
+    my ( $self, $filename ) = @_;
+    $filename =~ s#[[:cntrl:]]##smg;          # remove all control characters
+    $filename =~ s#^\s+|\s+$##g;              # trim spaces
+    $filename =~ s#^\.+##;                    # remove multiple leading dots
+    $filename =~ tr#"/\\:*?<>|#'\-\-\-_____#; # NTFS and FAT unsupported characters
+    return $filename;
+}
+
 sub prepare_item {
     my ( $self, $html ) = @_;
     my $xml_details = XML::XPath->new( xml => $html );
@@ -181,7 +190,7 @@ sub prepare_item {
     my $video_title = $xml_details->findvalue('//title');
 
     my $filename =
-      $self->title_to_filename( $video_title . '-' . $published_date );
+      $self->_filename_normalize( "$published_date - $video_title.mp4" );
 
     $filename =
       ( defined $self->target_directory )
@@ -338,18 +347,18 @@ sub download_all {
     my $client = WWW::YouTube::Download->new;
 
     my $counter = 0;
-    warn 'Total '
+    print 'Total '
       . $self->total_user_videos
       . ' videos found for channel '
-      . $self->channel;
+      . $self->channel
+      . "\n";
     foreach my $item ( @{ $self->video_list_ids } ) {
         $counter++;
-        warn $counter . '/'
+        print $counter . '/'
           . $self->total_download_videos
           . ' - Downloading: '
-          . $item->{title}
-          . ' into '
-          . $item->{filename};
+          . $item->{filename}
+          . "\n";
 
         try {
             if ( !-e $item->{filename} ) {
