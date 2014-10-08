@@ -354,16 +354,18 @@ sub download_all {
       . "\n";
     foreach my $item ( @{ $self->video_list_ids } ) {
         $counter++;
-        print $counter . '/'
-          . $self->total_download_videos
-          . ' - Downloading: '
-          . $item->{filename}
-          . "\n";
 
         try {
             if ( !-e $item->{filename} ) {
-                $client->download( $item->{id},
-                    { ( file_name => $item->{filename} ), } );
+                print $counter . '/'
+                  . $self->total_download_videos
+                  . ' - Downloading: '
+                  . $item->{filename}
+                  . "\n";
+                $client->download( $item->{id}, {
+                    filename => $item->{filename},
+                    verbose => 1
+                });
                 $self->save_nfo( $item->{nfo}, $item->{filename_nfo} );
             }
         }
